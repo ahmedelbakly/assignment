@@ -10,6 +10,11 @@ import { IApartment } from "../models/apartment.model";
 import { Apartment } from "../types/Apartment";
 
 export default class ApartmentService {
+  // ------------------------------
+  // FORMAT APARTMENT DATA
+  // Converts MongoDB document to Apartment type
+  // Optionally includes detailed fields
+  // ------------------------------
   private formatApartment(apartment: any, withDetails = false): Apartment {
     const base: Apartment = {
       id: apartment._id.toString(),
@@ -22,6 +27,7 @@ export default class ApartmentService {
       bathrooms: apartment.bathrooms,
       size: apartment.size,
       isAvailable: apartment.isAvailable,
+      unitNumber: apartment.unitNumber,
     };
 
     if (withDetails) {
@@ -32,7 +38,6 @@ export default class ApartmentService {
         yearBuilt: apartment.yearBuilt,
         searchText: apartment.searchText,
         location: apartment.location,
-        unitNumber: apartment.unitNumber,
         createdAt: apartment.createdAt,
         updatedAt: apartment.updatedAt,
       };
@@ -41,6 +46,10 @@ export default class ApartmentService {
     return base;
   }
 
+  // ------------------------------
+  // APPLY FILTERS TO MONGODB QUERY
+  // Supports price, bedrooms, bathrooms, size, location, project, availability, and amenities
+  // ------------------------------
   private applyFilters(query: any, filters: ApartmentFilter): void {
     // Price filter
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
@@ -50,27 +59,17 @@ export default class ApartmentService {
     }
 
     // Bedrooms filter
-    if (
-      filters.minBedrooms !== undefined ||
-      filters.maxBedrooms !== undefined
-    ) {
+    if (filters.minBedrooms !== undefined || filters.maxBedrooms !== undefined) {
       query.bedrooms = {};
-      if (filters.minBedrooms !== undefined)
-        query.bedrooms.$gte = filters.minBedrooms;
-      if (filters.maxBedrooms !== undefined)
-        query.bedrooms.$lte = filters.maxBedrooms;
+      if (filters.minBedrooms !== undefined) query.bedrooms.$gte = filters.minBedrooms;
+      if (filters.maxBedrooms !== undefined) query.bedrooms.$lte = filters.maxBedrooms;
     }
 
     // Bathrooms filter
-    if (
-      filters.minBathrooms !== undefined ||
-      filters.maxBathrooms !== undefined
-    ) {
+    if (filters.minBathrooms !== undefined || filters.maxBathrooms !== undefined) {
       query.bathrooms = {};
-      if (filters.minBathrooms !== undefined)
-        query.bathrooms.$gte = filters.minBathrooms;
-      if (filters.maxBathrooms !== undefined)
-        query.bathrooms.$lte = filters.maxBathrooms;
+      if (filters.minBathrooms !== undefined) query.bathrooms.$gte = filters.minBathrooms;
+      if (filters.maxBathrooms !== undefined) query.bathrooms.$lte = filters.maxBathrooms;
     }
 
     // Size filter
@@ -80,15 +79,10 @@ export default class ApartmentService {
       if (filters.maxSize !== undefined) query.size.$lte = filters.maxSize;
     }
 
-    // Location filter
+    // Text filters (location & project)
     if (filters.location) {
-      query.location = new RegExp(
-        this.escapeRegex(filters.location.trim()),
-        "i"
-      );
+      query.location = new RegExp(this.escapeRegex(filters.location.trim()), "i");
     }
-
-    // Project filter
     if (filters.project) {
       query.project = new RegExp(this.escapeRegex(filters.project.trim()), "i");
     }
@@ -98,21 +92,27 @@ export default class ApartmentService {
       query.isAvailable = filters.isAvailable;
     }
 
-    // Amenities filter
+    // Amenities filter (all specified amenities must be present)
     if (filters.amenities && filters.amenities.length > 0) {
       query.amenities = { $all: filters.amenities };
     }
   }
 
+  // ------------------------------
+  // ESCAPE SPECIAL CHARACTERS FOR REGEX
+  // ------------------------------
   private escapeRegex(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  // ✅ METHOD TO CREATE A NEW APARTMENT
+  // ------------------------------
+  // CREATE A NEW APARTMENT
+  // ------------------------------
   async createApartmentService(data: IApartment) {
     try {
       const newApartment = await ApartmentModel.create({
         ...data,
+        // Precompute a search text for efficient searching
         searchText: `${data.title}-${data.description}-${data.location}-${data.project}-${data.unitNumber}`,
       });
 
@@ -121,6 +121,7 @@ export default class ApartmentService {
         apartment: this.formatApartment(newApartment.toObject(), true),
       };
     } catch (error: any) {
+      // Handle duplicate unit number error
       if (error.code === 11000) {
         throw new Error(
           "An apartment with this unit number already exists in this project"
@@ -130,42 +131,38 @@ export default class ApartmentService {
     }
   }
 
-  // ✅ METHOD TO GET ALL APARTMENTS WITH SEARCH, FILTERS, AND PAGINATION
+  // ------------------------------
+  // GET ALL APARTMENTS
+  // Supports search, filters, and pagination
+  // ------------------------------
   async getAllApartmentsService(
     params: ApartmentSearchParams
   ): Promise<PaginatedResponse<Apartment>> {
     try {
       const { search, pagination, filters } = params;
 
-      
-
       // Validate and set pagination defaults
       const page = Math.max(PAGINATION_LIMITS.MIN_PAGE, pagination.page || 1);
       const limit = Math.min(
-        Math.max(
-          PAGINATION_LIMITS.MIN_LIMIT,
-          pagination.limit || PAGINATION_LIMITS.DEFAULT_LIMIT
-        ),
+        Math.max(PAGINATION_LIMITS.MIN_LIMIT, pagination.limit || PAGINATION_LIMITS.DEFAULT_LIMIT),
         PAGINATION_LIMITS.MAX_LIMIT
       );
 
-      // Build query
+      // Build MongoDB query object
       const query: any = {};
 
-      // Handle search across multiple fields
+      // Search across multiple fields
       if (search && search.trim()) {
         const searchRegex = new RegExp(this.escapeRegex(search.trim()), "i");
         query.$or = [{ searchText: searchRegex }];
       }
 
-      // Handle filters
+      // Apply filters if provided
       if (filters) {
         this.applyFilters(query, filters);
       }
 
-      console.log("ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", query);
-
-      // Execute queries in parallel for better performance
+      // Execute queries in parallel for performance
       const [apartments, total] = await Promise.all([
         ApartmentModel.find(query)
           .skip((page - 1) * limit)
@@ -178,9 +175,7 @@ export default class ApartmentService {
       const totalPages = Math.ceil(total / limit);
 
       return {
-        data: apartments.map((apartment) =>
-          this.formatApartment(apartment, false)
-        ),
+        data: apartments.map((apartment) => this.formatApartment(apartment, false)),
         pagination: {
           page,
           limit,
@@ -191,13 +186,13 @@ export default class ApartmentService {
         },
       };
     } catch (error) {
-      throw new Error(
-        `Failed to fetch apartments: ${(error as Error).message}`
-      );
+      throw new Error(`Failed to fetch apartments: ${(error as Error).message}`);
     }
   }
 
-  // ✅ METHOD TO GET APARTMENT BY ID
+  // ------------------------------
+  // GET APARTMENT BY ID
+  // ------------------------------
   async getApartmentByIdService(id: string) {
     try {
       const apartment = await ApartmentModel.findById(id);
@@ -210,6 +205,10 @@ export default class ApartmentService {
     }
   }
 
+  // ------------------------------
+  // GET FILTER OPTIONS
+  // Returns possible values for filters: locations, projects, amenities, and numeric ranges
+  // ------------------------------
   async getFilterOptionsService() {
     try {
       const options = await Promise.all([
@@ -229,10 +228,7 @@ export default class ApartmentService {
       return {
         locations: locations.filter((l) => l).sort(),
         projects: projects.filter((p) => p).sort(),
-        amenities: amenities
-          .flat()
-          .filter((a) => a)
-          .sort(),
+        amenities: amenities.flat().filter((a) => a).sort(),
         minPrice: prices.length ? Math.min(...prices) : 0,
         maxPrice: prices.length ? Math.max(...prices) : 0,
         minBedrooms: bedrooms.length ? Math.min(...bedrooms) : 0,
@@ -243,11 +239,7 @@ export default class ApartmentService {
         maxSize: sizes.length ? Math.max(...sizes) : 0,
       };
     } catch (error) {
-      throw new Error(
-        `Failed to get filter options: ${(error as Error).message}`
-      );
+      throw new Error(`Failed to get filter options: ${(error as Error).message}`);
     }
   }
-
-  // ✅ PRIVATE HELPER METHODS
 }

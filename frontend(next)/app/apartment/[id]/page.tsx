@@ -1,100 +1,26 @@
 "use client";
 
-import axios from "axios";
+import DetailItem from "@/components/apartment/DetailItem";
+import { useApi } from "@/hook/useApi";
+import { getApartmentById } from "@/service/apartmentService";
+import { DApartment } from "@/types/apartment";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-
-// Define the interface for the apartment data
-interface Apartment {
-  title: string;
-  description: string;
-  price: number;
-  location: string;
-  unitNumber: string;
-  project: string;
-  bedrooms: number;
-  bathrooms: number;
-  size: number;
-  imageUrl: string;
-  isAvailable: boolean;
-  amenities: string[];
-  floor: number;
-  yearBuilt: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Sample apartment data as fallback
-const sampleApartmentData: Apartment = {
-  title: "Vali in Alex",
-  description:
-    "Enjoy ocean views every day in this spacious 2-bedroom apartment.",
-  price: 3200,
-  location: "Miami Beach, Florida",
-  unitNumber: "D-502",
-  project: "Seaside Villas",
-  bedrooms: 2,
-  bathrooms: 2,
-  size: 110,
-  imageUrl: "https://picsum.photos/600/400?random=4",
-  isAvailable: true,
-  amenities: ["Balcony", "Pool", "Security"],
-  floor: 4,
-  yearBuilt: 2017,
-  createdAt: "2024-04-20T14:45:00.000Z",
-  updatedAt: "2024-04-20T14:45:00.000Z",
-};
 
 const ApartmentDetailPage: React.FC = () => {
-  const [apartment, setApartment] = useState<Apartment | null>(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const params = useParams();
   const id = params?.id;
 
-  useEffect(() => {
-    const fetchApartment = async () => {
-      try {
-        setLoading(true);
+  const {
+    data: apartment,
+    error,
+    loading,
+  } = useApi<DApartment>(() => getApartmentById(id as string), [id]);
 
-        // If we have an ID, try to fetch from API
-        if (id) {
-          const response = await axios.get(
-            `http://localhost:4000/api/apartments/${id}`
-          );
-
-          if (response.status) {
-            setApartment(response.data);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Fallback to sample data if no ID or API fetch failed
-        setApartment(sampleApartmentData);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching apartment:", error);
-        setApartment(sampleApartmentData);
-        setLoading(false);
-      }
-    };
-
-    fetchApartment();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading apartment details...</p>
-        </div>
-      </div>
-    );
-  }
-
+  if (loading) return <p>Loading apartment...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+  if (!apartment) return <p>Apartment not found</p>;
   if (!apartment) {
     return (
       <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
@@ -218,9 +144,7 @@ const ApartmentDetailPage: React.FC = () => {
               <div className="mb-4">
                 <p className="text-2xl font-bold text-gray-900">
                   ${apartment.price.toLocaleString()}
-                  <span className="text-sm font-normal text-gray-600">
-                   
-                  </span>
+                  <span className="text-sm font-normal text-gray-600"></span>
                 </p>
               </div>
 
@@ -256,16 +180,5 @@ const ApartmentDetailPage: React.FC = () => {
 };
 
 // Helper component for detail items
-const DetailItem: React.FC<{ label: string; value: string }> = ({
-  label,
-  value,
-}) => {
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-      <span className="text-gray-600">{label}</span>
-      <span className="font-medium text-gray-900">{value}</span>
-    </div>
-  );
-};
 
 export default ApartmentDetailPage;

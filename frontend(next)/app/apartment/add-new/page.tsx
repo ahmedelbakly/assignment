@@ -8,6 +8,8 @@ import { FaHome, FaSave } from "react-icons/fa";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { AMENITIES_OPTIONS, PROJECTS } from "@/data/fakeApartmentData";
+import { ApartmentFormData } from "@/types/apartment";
 
 // ✅ Enhanced Validation Schema
 const schema = yup.object().shape({
@@ -73,45 +75,6 @@ const schema = yup.object().shape({
   isAvailable: yup.boolean().required("Availability is required"),
 });
 
-interface ApartmentFormData {
-  title: string;
-  description: string;
-  price: number;
-  location: string;
-  unitNumber: string;
-  project: string;
-  bedrooms: number;
-  bathrooms: number;
-  size: number;
-  imageUrl: string;
-  amenities: string[]; // <-- required now
-  floor: number;
-  yearBuilt: number;
-  isAvailable: boolean;
-}
-
-// Sample project data
-const PROJECTS = [
-  { id: 1, name: "Ocean View Towers" },
-  { id: 2, name: "City Center Apartments" },
-  { id: 3, name: "Green Valley Residences" },
-  { id: 4, name: "Metropolitan Heights" },
-];
-
-// Amenities options
-const AMENITIES_OPTIONS = [
-  { value: "parking", label: "Parking" },
-  { value: "gym", label: "Gym" },
-  { value: "pool", label: "Swimming Pool" },
-  { value: "wifi", label: "WiFi" },
-  { value: "security", label: "24/7 Security" },
-  { value: "concierge", label: "Concierge" },
-  { value: "laundry", label: "Laundry Facilities" },
-  { value: "elevator", label: "Elevator" },
-  { value: "balcony", label: "Balcony" },
-  { value: "furnished", label: "Furnished" },
-];
-
 // Custom Input Component
 const MainInput = ({
   label = "",
@@ -157,7 +120,7 @@ export default function ApartmentForm() {
   });
 
   console.log(errors);
-
+  // on submit handler simple code if project is big use redux or zustand state management
   const onSubmit: SubmitHandler<ApartmentFormData> = async (
     data: ApartmentFormData
   ) => {
@@ -176,6 +139,7 @@ export default function ApartmentForm() {
 
         // Reset form or redirect here if needed
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error adding apartment:", error);
       toast.error(error?.response?.data);
@@ -185,7 +149,7 @@ export default function ApartmentForm() {
     }
   };
 
-  // on cancel
+  // handle on cancel add apartment forward to home
   const onCancel = () => {
     router.push("/");
   };

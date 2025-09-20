@@ -97,10 +97,10 @@ const ApartmentSchema = new Schema<IApartment>(
 ApartmentSchema.index({ unitNumber: 1, project: 1 }, { unique: true });
 
 // Index for better search performance
-ApartmentSchema.index({ title: "text", description: "text", location: "text" });
 ApartmentSchema.index({ price: 1 });
 ApartmentSchema.index({ bedrooms: 1 });
 ApartmentSchema.index({ size: 1 });
+ApartmentSchema.index({ searchText: 1 });
 
 // Static method to find available apartments
 ApartmentSchema.statics.findAvailable = function () {

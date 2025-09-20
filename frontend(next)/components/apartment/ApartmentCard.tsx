@@ -55,7 +55,7 @@ export default function ApartmentCard({ apartment }: { apartment: Apartment }) {
         </p>
 
         <div className="mt-4 flex justify-between items-center">
-          <span className="text-sm text-gray-500">{apartment.project}</span>
+          <span className="text-md text-gray-500">{apartment.project}</span>
           <span className="text-sm text-gray-500">{apartment.unitNumber}</span>
         </div>
       </div>
