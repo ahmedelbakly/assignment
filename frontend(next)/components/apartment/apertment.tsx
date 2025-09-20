@@ -93,7 +93,7 @@ export default function ApartmentPage() {
     setIsFiltered(false);
     setIsSearch(false);
     setSearchTerm("");
-    const apartments = await getAllApartments(page);
+    const apartments = await getAllApartments(1);
     if (apartments?.data) {
       setApartmentsList(apartments.data);
       setPagination(apartments.pagination);
