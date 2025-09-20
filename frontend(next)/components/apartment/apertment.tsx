@@ -60,8 +60,6 @@ export default function ApartmentPage() {
       })();
     } else {
       (async () => {
-        console.log("searchTerm", searchTerm);
-
         const searchedApartments = await getAllApartments(1);
         if (searchedApartments) {
           setApartmentsList(searchedApartments.data);
@@ -85,7 +83,7 @@ export default function ApartmentPage() {
       setError("Failed to filter apartments.");
     }
   };
-  console.log("apartmentsList", isFiltered, isSearch);
+
   
 
   // handle clear filter
@@ -133,7 +131,7 @@ export default function ApartmentPage() {
         {isSearch || isFiltered ? null : (
           <Pagination
             totalPages={pagination.totalPages}
-            currentPage={page}
+            currentPage={pagination.page}
             onPageChange={setPage}
           />
         )}

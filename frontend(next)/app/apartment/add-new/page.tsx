@@ -119,7 +119,7 @@ export default function ApartmentForm() {
     },
   });
 
-  console.log(errors);
+ 
   // on submit handler simple code if project is big use redux or zustand state management
   const onSubmit: SubmitHandler<ApartmentFormData> = async (
     data: ApartmentFormData
@@ -132,7 +132,6 @@ export default function ApartmentForm() {
         data
       );
       if (response.status === 201) {
-        console.log("Apartment added successfully:", response.data);
         toast.success("Apartment added successfully");
         setLoading(false);
         router.push("/");

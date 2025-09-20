@@ -7,9 +7,6 @@ export default function SearchBar({
   searchTerm: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
-
-  console.log("searchTermfromSearchBar", searchTerm);
-  
   return (
     <input
       type="text"
