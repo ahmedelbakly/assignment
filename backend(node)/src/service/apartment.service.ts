@@ -108,7 +108,6 @@ export default class ApartmentService {
     return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
- 
   // ✅ METHOD TO CREATE A NEW APARTMENT
   async createApartmentService(data: IApartment) {
     try {
@@ -138,6 +137,8 @@ export default class ApartmentService {
     try {
       const { search, pagination, filters } = params;
 
+      
+
       // Validate and set pagination defaults
       const page = Math.max(PAGINATION_LIMITS.MIN_PAGE, pagination.page || 1);
       const limit = Math.min(
@@ -161,6 +162,8 @@ export default class ApartmentService {
       if (filters) {
         this.applyFilters(query, filters);
       }
+
+      console.log("ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", query);
 
       // Execute queries in parallel for better performance
       const [apartments, total] = await Promise.all([
@@ -207,7 +210,7 @@ export default class ApartmentService {
     }
   }
 
-   async getFilterOptionsService() {
+  async getFilterOptionsService() {
     try {
       const options = await Promise.all([
         ApartmentModel.distinct("location"),

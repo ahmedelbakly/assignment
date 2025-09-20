@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  # Backend Service (Node.js/Express)
+  backend:
+    build:
+      context: "./backend(node)"
+      dockerfile: Dockerfile
+    container_name: mern-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+    volumes:
+      - "./backend(node):/app"
+      - /app/node_modules
+    networks:
+      - mern-network
+    command: npm run dev
+
+  # Frontend Service (Next.js)
+  frontend:
+    build:
+      context: "./frontend(next)"
+      dockerfile: Dockerfile
+    container_name: mern-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:4000
+      - CHOKIDAR_USEPOLLING=true # Helps with file watching in Docker
+    volumes:
+      - "./frontend(next):/app"
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - mern-network
+    stdin_open: true
+    tty: true
+
+networks:
+  mern-network:
+    driver: bridge

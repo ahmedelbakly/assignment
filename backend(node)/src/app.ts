@@ -27,7 +27,14 @@ app.use("/api/apartments", apartmentRoutes);
 app.use(
   (error: Error, req: Request, res: Response, next: NextFunction): void => {
     console.error("Unhandled error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(400).json(error.message );
+  }
+);
+
+// handle global errors here
+app.use(
+  (error: Error, req: Request, res: Response, next: NextFunction): void => {
+    res.status(500).json(error.message );
   }
 );
 
