@@ -10,40 +10,28 @@ pipeline {
         
         stage('Clone from Git') {
             steps {
+                // Use your correct URL, branch, and credential ID
                 git(
-                    url: 'https://github.com/your-username/your-repo.git',
-                    branch: 'main'
+                    url: 'https://github.com/ahmedelbakly/assignment.git',
+                    branch: 'main', // Change to your correct branch name
+                    credentialsId: '' // <- Insert your Jenkins credential ID here if the repo is private
                 )
             }
         }
         
-        stage('Install Backend Dependencies') {
+        stage('Install & Build Backend') {
             steps {
                 dir('backend(node)') {
                     sh 'npm install'
+                    sh 'npm run build || echo "No build script for backend, skipping."'
                 }
             }
         }
         
-        stage('Install Frontend Dependencies') {
+        stage('Install & Build Frontend') {
             steps {
                 dir('frontend(next)') {
                     sh 'npm install'
-                }
-            }
-        }
-        
-        stage('Build Backend') {
-            steps {
-                dir('backend(node)') {
-                    sh 'npm run build || echo "No build script for backend"'
-                }
-            }
-        }
-        
-        stage('Build Frontend') {
-            steps {
-                dir('frontend(next)') {
                     sh 'npm run build'
                 }
             }
@@ -52,14 +40,11 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Backend tests
                     dir('backend(node)') {
-                        sh 'npm test || echo "Tests failed or no tests"'
+                        sh 'npm test || echo "Backend tests failed or no tests"'
                     }
-                    
-                    // Frontend tests
                     dir('frontend(next)') {
-                        sh 'npm run test -- --watchAll=false || echo "Tests failed or no tests"'
+                        sh 'npm run test -- --watchAll=false || echo "Frontend tests failed or no tests"'
                     }
                 }
             }
@@ -68,20 +53,10 @@ pipeline {
     
     post {
         always {
-            echo "Build process completed"
-            
-            // Archive build artifacts if needed
-            archiveArtifacts artifacts: '**/build/**/*', fingerprint: true
+            echo "Build process completed."
         }
         success {
             echo "✅ Backend and frontend built successfully!"
-            
-            // Show build results
-            sh '''
-                echo "Build Summary:"
-                echo "Backend built in: backend(node)/"
-                echo "Frontend built in: frontend(next)/build/"
-            '''
         }
         failure {
             echo "❌ Build failed!"
